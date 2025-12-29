@@ -1,5 +1,5 @@
 import React from 'react';
-import image from '../assets/gallery/image7.png';
+import image from '../assets/home/JLL_Bengaluru_Prestige Marigold_8257_EXT_1 (1).jpg';
 import Button from '../components/button/buttonMain';
 
 // Overview Component
@@ -38,7 +38,7 @@ residential community with
 modern infrastructure and
 ample open space</p>
             <br/>
-            <p>These ready to build plots in Bangalore come with wide internal roads and underground utilities. Whether you’re planning to construct your dream home or invest in residential plots near Bangalore Airport, Prestige Marigold is the perfect place.</p>
+            <p>These plots in Bangalore come with wide internal roads and underground utilities. Whether you’re planning to construct your dream home or invest in residential plots near Bangalore Airport, Prestige Marigold is the perfect place.</p>
 
             
 
