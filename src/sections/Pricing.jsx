@@ -26,7 +26,7 @@ const Pricing = ({ setContactModal, contactmodal, formSubmitted }) => {
   const propertyTypes = [
     
     { type: "1,500 sq.ft ", price: "₹ 3.25 Cr ++",  image: bhk5 },
-
+{ type: "2,000 sq.ft ", price: "₹ 3.25 Cr ++",  image: bhk4 },
     { type: "2,400 sq.ft ", price: "₹ 3.25 Cr ++",  image: bhk1 },
    
     // { type: "4 BHK Grande", price: "₹ 3.55 Cr ++", size: "2203 Sq.ft.", image: bhk2 },
