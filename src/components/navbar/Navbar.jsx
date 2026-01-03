@@ -1,57 +1,59 @@
 import { useEffect, useState } from "react";
-import { Phone, Xmark, MenuScale } from "iconoir-react"; // Importing icons for phone, close, and menu
-import logo from "../../assets/navbar/images.png"; // Importing Prestige Logo
-import { Link } from "react-router-dom"; // Importing Link for routing
- import arrow from "../../assets/navbar/whitearrow.png";
+import { Phone, Xmark, MenuScale } from "iconoir-react";
+import logo from "../../assets/home/prestige authorise cp.png";
+import arrow from "../../assets/navbar/whitearrow.png";
 
-// Banner component
+/* =======================
+   Banner Component
+======================= */
 export const Banner = ({ setContactModal }) => {
   const [isBannerVisible, setIsBannerVisible] = useState(true);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768); // Adjust this width as per your definition of "mobile"
+      setIsMobile(window.innerWidth <= 768);
     };
-    handleResize();
     window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  if (!isBannerVisible) return null;
+
   return (
-    (isBannerVisible) && (
-      <div className="w-screen bg-black text-white text-center p-[10px] flex justify-center items-center gap-[16px] max-h-[40px] z-30">
-        <span className={`font-sans font-semibold ${isMobile ? "text-[14px] leading-[14px]" : "text-[18px] leading-[17.63px]"}`}>
-          Exclusive Pre-launch price and offers{" "}
+    <div className="w-full bg-black text-white flex items-center justify-center gap-4 px-4 py-1 relative h-[36px]">
+      <span className="font-semibold text-[13px] md:text-[15px]">
+        Exclusive Pre-launch price and offers
+      </span>
+
+      <div
+        className="flex items-center gap-1 cursor-pointer hover:underline"
+        onClick={() => setContactModal(true)}
+      >
+        <span className="font-semibold text-[13px] md:text-[15px]">
+          Get it now
         </span>
-        <div className="flex items-center justify-center gap-[4px] cursor-pointer" onClick={() => setContactModal(true)}>
-          <span className={`font-sans font-semibold ${isMobile ? "text-[14px] leading-[14px]" : "text-[18px] leading-[17.63px]"} hover:underline hover:decoration-white`}>Get it now</span>
-          <img src={arrow} alt=""  className="w-5 h-4"/>
-        </div>
+        <img src={arrow} alt="" className="w-4 h-3" />
+      </div>
+
+      {!isMobile && (
         <button
-          className={`absolute ${isMobile ? "right-2 hidden" : "right-4"} text-white`}
+          className="absolute right-4"
           onClick={() => setIsBannerVisible(false)}
         >
-          <Xmark className="w-5 " />
+          <Xmark className="w-4 h-4" />
         </button>
-      </div>
-    )
+      )}
+    </div>
   );
 };
 
-// Navbar component
-export const Navbar = ({ sitevisitmodal, setSiteVisitModal, setContactModal }) => {
+/* =======================
+   Navbar Component
+======================= */
+export const Navbar = ({ setContactModal }) => {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
-  // Function to toggle mobile navigation open/close state
-  const toggleMobileNav = () => {
-    setIsMobileNavOpen(!isMobileNavOpen);
-  };
-
-  // Navigation links data, can be easily modified to add/remove links
   const navLinks = [
     { name: "Home", href: "#Home" },
     { name: "Overview", href: "#Overview" },
@@ -63,74 +65,86 @@ export const Navbar = ({ sitevisitmodal, setSiteVisitModal, setContactModal }) =
   ];
 
   return (
-      <div className="font-body fixed w-full z-20 top-0 start-0 bg-white ">
-        <Banner setContactModal={setContactModal} />
-        <div className="max-w-7xl mx-auto px-5 lg:px-0 flex flex-wrap items-center justify-between py-[8px] z-40 ">
-          {/* Logo Section */}
-          <a
-            href="/"
-            className="flex items-center px-4 md:p-0 space-x-3 rtl:space-x-reverse"
-          >
+    <header className="fixed top-0 w-full z-50">
+      <Banner setContactModal={setContactModal} />
+
+      <nav className="bg-white/95 backdrop-blur-md border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-5 flex items-center justify-between h-[72px]">
+          
+          {/* Logo */}
+          <a href="/" className="flex items-center">
             <img
               src={logo}
-              className="h-20 md:h-20"
-              alt="Sattva Hamlet"
+              alt="Prestige"
+              className="h-12 md:h-14 object-contain"
             />
           </a>
 
-          {/* Mobile Menu Toggle Button */}
-          <div className="lg:hidden flex items-center">
-            <button
-              type="button"
-              onClick={toggleMobileNav}
-              className="inline-flex items-center w-10 h-10 justify-center text-black hover:bg-skyblue2Color focus:outline-none"
-              aria-expanded={isMobileNavOpen ? "true" : "false"}
+          {/* Desktop Navigation */}
+          <ul className="hidden lg:flex items-center gap-8">
+            {navLinks.map((link, index) => (
+              <li key={index}>
+                <a
+                  href={link.href}
+                  className="text-sm font-semibold uppercase tracking-wide text-black hover:text-PrestigeBrown transition"
+                >
+                  {link.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+
+          {/* Call Button (Desktop) */}
+          <div className="hidden lg:flex">
+            <a
+              href="tel:+919353329893"
+              className="flex items-center gap-2 bg-PrestigeBrown text-white px-4 py-2 rounded-lg shadow hover:bg-opacity-90 transition"
             >
-              <span className="sr-only">
-                {isMobileNavOpen ? "Close main menu" : "Open main menu"}
-              </span>
-              {isMobileNavOpen ? (
-                <Xmark className="w-8 h-8" />
-              ) : (
-                <MenuScale className="w-8 h-8" />
-              )}
-            </button>
+              <Phone className="w-5 h-5" />
+              93533 29893
+            </a>
           </div>
 
-          {/* Navigation Links */}
-          <div
-            className={`items-center md:flex ${
-              isMobileNavOpen
-                ? " min-h-screen backdrop-blur-md w-full mt-8"
-                : "hidden"
-            }`}
-            id="navbar-sticky"
-            onClick={() => setIsMobileNavOpen(false)}
+          {/* Mobile Menu Button */}
+          <button
+            className="lg:hidden"
+            onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
           >
-            <ul className="flex flex-col p-4 md:p-0 md:flex-row gap-12 w-full justify-between text-white">
+            {isMobileNavOpen ? (
+              <Xmark className="w-7 h-7" />
+            ) : (
+              <MenuScale className="w-7 h-7" />
+            )}
+          </button>
+        </div>
+
+        {/* Mobile Menu */}
+        {isMobileNavOpen && (
+          <div className="lg:hidden bg-white border-t">
+            <ul className="flex flex-col items-center gap-6 py-8">
               {navLinks.map((link, index) => (
                 <li key={index}>
                   <a
                     href={link.href}
-                    className="block border-b md:border-0 hover:border-gray-400 font-bold text-sm uppercase text-black hover:text-PrestigeBrown transition-all duration-300"
+                    onClick={() => setIsMobileNavOpen(false)}
+                    className="text-sm font-semibold uppercase text-black hover:text-PrestigeBrown transition"
                   >
                     {link.name}
                   </a>
                 </li>
               ))}
+
+              <a
+                href="tel:+919353329893"
+                className="mt-4 flex items-center gap-2 bg-PrestigeBrown text-white px-6 py-3 rounded-lg"
+              >
+                <Phone className="w-5 h-5" />
+                Call Now
+              </a>
             </ul>
           </div>
-
-          {/* Call Button */}
-          <div className="hidden lg:flex items-center">
-            <a
-              href="tel:+919353329893"
-              className="flex items-center bg-PrestigeBrown text-white px-4 py-2 rounded-lg shadow-lg hover:bg-opacity-90 transition"
-            >
-              <Phone className="w-5 h-5 mr-2" />93533 29893
-            </a>
-          </div>
-        </div>
-      </div>
+        )}
+      </nav>
+    </header>
   );
 };
