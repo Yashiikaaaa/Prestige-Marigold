@@ -1,31 +1,26 @@
 import { useEffect, useState } from "react";
 import { FormAlert } from "./FormAlert";
-import ReactGA from "react-ga4"; // Google Analytics 4
-import { Phone, Xmark } from "iconoir-react"; // Icon library
-import overlaybg from "../../assets/gallery/14.webp"; // Background image
+import ReactGA from "react-ga4";
+import { Phone, Xmark } from "iconoir-react";
+import overlaybg from "../../assets/gallery/14.webp";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { isValidPhoneNumber } from "libphonenumber-js";
 
-// Import environment variables
+// GA4 Init
 const trackingId = import.meta.env.VITE_GA_MEASUREMENT_ID;
-
 if (trackingId) {
   ReactGA.initialize(trackingId);
 }
 
-const gtag_report_conversion = (url) => {
-  if (typeof gtag !== "undefined") {
-    var callback = function () {
-      if (typeof url !== "undefined") {
-        window.location = url;
-      }
-    };
-    gtag("event", "conversion", {
-      send_to: "AW-16460421460/zvkSCLj3m6caENSy-Kg9",
-      value: 1.0,
-      currency: "INR",
-      event_callback: callback,
+// 🔥 GTM EVENT PUSH
+const fireContactFormEvent = () => {
+  if (window.dataLayer) {
+    window.dataLayer.push({
+      event: "Contact_form_submit",
+      form_name: "Contact Form",
+      project_name: "Prestige Marigold",
+      lead_type: "Enquiry",
     });
   }
 };
@@ -35,41 +30,23 @@ const ContactForm = ({ contactmodal, setContactModal, setSiteVisitModal }) => {
   const [number, setNumber] = useState("");
   const [alert, setAlert] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [utmParams, setUtmParams] = useState("");
-
+  const [utmParams, setUtmParams] = useState({});
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    handleResize();
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  function getUTMParams() {
+  const getUTMParams = () => {
     const params = new URLSearchParams(window.location.search);
-    const source = params.get("utmsource");
-    const medium = params.get("utmMedium");
-    const campaign = params.get("utmCampaign");
-
-    ReactGA.send({
-      hitType: "pageview",
-      utmSource: source,
-      utmMedium: medium,
-      utmCampaign: campaign,
-    });
-
     return {
-      utmSource: source || "",
-      utmMedium: medium || "",
-      utmCampaign: campaign || "",
+      utmSource: params.get("utm_source") || "",
+      utmMedium: params.get("utm_medium") || "",
+      utmCampaign: params.get("utm_campaign") || "",
     };
-  }
+  };
 
   useEffect(() => {
     setUtmParams(getUTMParams());
@@ -77,13 +54,12 @@ const ContactForm = ({ contactmodal, setContactModal, setSiteVisitModal }) => {
 
   const validateForm = () => {
     if (!name || !number) {
-      setAlert(<FormAlert message="Please fill in all required fields." onClose={() => setAlert(null)} />);
+      setAlert(<FormAlert message="Please fill all required fields." onClose={() => setAlert(null)} />);
       return false;
     }
 
-    const nameRegex = /^[A-Za-z ]+$/;
-    if (!nameRegex.test(name)) {
-      setAlert(<FormAlert message="Invalid Name. Use only alphabets and spaces." onClose={() => setAlert(null)} />);
+    if (!/^[A-Za-z ]+$/.test(name)) {
+      setAlert(<FormAlert message="Invalid Name." onClose={() => setAlert(null)} />);
       return false;
     }
 
@@ -97,8 +73,8 @@ const ContactForm = ({ contactmodal, setContactModal, setSiteVisitModal }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (loading) return;
+
     setLoading(true);
 
     if (!validateForm()) {
@@ -123,78 +99,90 @@ const ContactForm = ({ contactmodal, setContactModal, setSiteVisitModal }) => {
     };
 
     try {
-      const response = await fetch("https://google-campaign-leads-service-dot-iqol-crm.uc.r.appspot.com/handleMultipleCampaignData", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        "https://google-campaign-leads-service-dot-iqol-crm.uc.r.appspot.com/handleMultipleCampaignData",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok) throw new Error("API Error");
 
-      const result = await response.json();
-      console.log("Success:", result);
+      await response.json();
 
-      gtag_report_conversion();
-      
+      // ✅ FIRE GTM EVENT (FOR GOOGLE ADS & GA4)
+      fireContactFormEvent();
 
       setName("");
       setNumber("");
 
       setAlert(<FormAlert message="We received your info. Expect a response soon!" onClose={() => setAlert(null)} />);
     } catch (error) {
-      console.error("Error submitting form:", error);
+      console.error(error);
       setAlert(<FormAlert message="Something went wrong. Please try again later." onClose={() => setAlert(null)} />);
     } finally {
-      setTimeout(() => setLoading(false), 1000);
+      setTimeout(() => setLoading(false), 800);
     }
   };
 
   return (
     <div>
       <div className="fixed inset-0 bg-black opacity-80 z-30"></div>
+
       <div className={`fixed ${isMobile ? "" : "top-24"} left-0 right-0 bg-white z-40 w-full md:w-fit mx-auto`}>
         <div className="max-w-7xl mx-auto flex gap-5 items-center justify-between border shadow-xl overflow-hidden" style={{ height: "75vh" }}>
+          
           <img src={overlaybg} alt="background" className="hidden md:block w-full h-full" />
-          <div className="mx-auto w-full gap-3 px-8 h-full flex flex-col items-center justify-center">
-            <button className="text-3xl focus:outline-none float-end absolute top-2 right-2 bg-white w-fit" onClick={() => setContactModal(!contactmodal)}>
+
+          <div className="mx-auto w-full px-8 h-full flex flex-col items-center justify-center">
+            <button className="absolute top-2 right-2" onClick={() => setContactModal(!contactmodal)}>
               <Xmark />
             </button>
-            <div className={`font-subheading font-semibold text-[28px] leading-[25px] text-center ${isMobile ? "pt-4" : "pt-36"} md:pt-8`}>
+
+            <h2 className="text-[28px] font-semibold text-center pt-6">
               Want to know more? Enquire Now!
-            </div>
-            <div className="mx-auto max-w-sm pt-8 w-full">
+            </h2>
+
+            <div className="max-w-sm w-full pt-8">
               <input
                 type="text"
-                className="p-4 w-full bg-transparent text-base focus:outline-none placeholder-gray-400 text-black border border-gray-500 rounded-sm"
+                className="p-4 w-full border border-gray-500"
                 placeholder="Full Name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
             </div>
-            <div className="mx-auto max-w-sm py-4 w-full">
-              <PhoneInput className="bg-transparent text-base focus:outline-none border border-gray-500 rounded-sm h-16 p-5" placeholder="Contact Number" defaultCountry="IN" value={number} onChange={setNumber} />
+
+            <div className="max-w-sm w-full py-4">
+              <PhoneInput
+                className="border border-gray-500 h-16 p-4"
+                placeholder="Contact Number"
+                defaultCountry="IN"
+                value={number}
+                onChange={setNumber}
+              />
             </div>
-            <div className="flex flex-col items-center justify-between w-full">
-              <div className="mx-auto max-w-sm w-full">
-                <button onClick={handleSubmit} className={`text-white my-5 p-2 w-full ${loading ? "bg-gray-400" : "bg-PrestigeBrown"}`} disabled={loading}>
-                  {loading ? "Submitting..." : "Submit"}
-                </button>
-              </div>
-              <div className="flex w-full items-center justify-center gap-[10px]">
-                <div className="h-[2px] w-[86px] bg-[#D9D9D9]" />
-                <span className="font-sans font-normal text-[18px] leading-[24px] text-[#7E7E7E]">Or</span>
-                <div className="h-[2px] w-[86px] bg-[#D9D9D9]" />
-              </div>
-              <div className="mx-auto max-w-sm w-full">
-                <button className="text-white my-5 p-2 w-full bg-PrestigeBrown flex items-center justify-center hover:bg-opacity-90 transition">
-                  <a href="tel:+919353329893" className="flex items-center">
-                    <Phone className="w-5 h-5 mr-2" />93533 29893
-                  </a>
-                </button>
-              </div>
+
+            <div className="max-w-sm w-full">
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className={`w-full p-3 text-white ${loading ? "bg-gray-400" : "bg-PrestigeBrown"}`}
+              >
+                {loading ? "Submitting..." : "Submit"}
+              </button>
+            </div>
+
+            <div className="max-w-sm w-full mt-4">
+              <a href="tel:+919353329893" className="block bg-PrestigeBrown text-white p-3 text-center">
+                <Phone className="inline mr-2" /> 93533 29893
+              </a>
             </div>
           </div>
         </div>
+
         {alert && <div>{alert}</div>}
       </div>
     </div>
