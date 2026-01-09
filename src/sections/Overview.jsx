@@ -1,5 +1,5 @@
 import React from 'react';
-import image from '../assets/home/JLL_Bengaluru_Prestige Marigold_8257_EXT_1 (1).jpg';
+import image from '../assets/home/new-plotted-development-varthur-road-bangalore-2024.webp';
 import Button from '../components/button/buttonMain';
 
 // Overview Component

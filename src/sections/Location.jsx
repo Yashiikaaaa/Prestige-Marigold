@@ -21,7 +21,7 @@ export const Location = () => {
               <div className="flex items-center justify-center md:justify-start">
                 <img src={mapPointer} alt="Map Pointer" className="w-3 h-3 md:w-5 md:h-5 mr-2" />
                 <p className="text-xs md:text-xl font-body font-medium">
-                 Off NH-44, Near Yelahanka, Bengaluru
+                 IVC Road, Near Yelahanka, Bengaluru
                 </p>
               </div>
             </div>

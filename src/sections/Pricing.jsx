@@ -4,7 +4,7 @@ import bhk1 from '../assets/gallery/image5.jpg';
 import bhk2 from '../assets/gallery/image9.png';
 import bhk3 from '../assets/gallery/16.webp';
 import bhk5 from '../assets/gallery/image2.jpg';
-import bhk4 from '../assets/home/HOME.webp';
+import bhk4 from '../assets/home/image 25.png';
 import bhk6 from '../assets/gallery/gallery_7.png';
 const Pricing = ({ setContactModal, contactmodal, formSubmitted }) => {
   const [activeTab, setActiveTab] = useState(0);

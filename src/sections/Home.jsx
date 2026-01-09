@@ -1,4 +1,4 @@
-import herobanner from "../assets/gallery/gallery_img4.jpg"; // Importing hero banner background image
+import herobanner from "../assets/home/mari.jpg"; // Importing hero banner background image
 import Button from "../components/button/buttonMain"; // Importing the Button component for reusability
 import homeLocation from "../assets/home/location.svg"; // Importing location icon
 import { useEffect, useState } from "react";
@@ -101,7 +101,7 @@ export const Home = ({ contactmodal, setContactModal }) => {
               className="h-3 md:h-6 text-black"
             />
             <p className="max-w-96 font-body text-left text-black md:text-2xl text-xs font-medium leading-[130%]">
-           Off NH-44{/* Location name */}
+           IVC Road{/* Location name */}
             </p>
           </div>
         </div>
