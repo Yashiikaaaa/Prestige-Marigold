@@ -121,6 +121,7 @@ export const PageRoute = () => {
               <RevealOnScroll>
                 <Home
                   openContactModal={openContactModal}
+                  setContactModal={setContactModal}
                 />
               </RevealOnScroll>
               <RevealOnScroll>
@@ -163,6 +164,7 @@ export const PageRoute = () => {
               <RevealOnScroll>
                 <Home
                   openContactModal={openContactModal}
+                  setContactModal={setContactModal}
                 />
               </RevealOnScroll>
             </>
