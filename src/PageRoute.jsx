@@ -1,7 +1,7 @@
-import React, {useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useSpring, animated } from 'react-spring';
-
+import { useSpring, animated } from "react-spring";
+import ReactGA from "react-ga4";
 
 import { Home } from "./sections/Home";
 import { Features } from "./sections/Features";
@@ -10,15 +10,14 @@ import { Amenities } from "./sections/Amenities";
 import { Footer } from "./components/footer/Footer";
 import { Navbar } from "./components/navbar/Navbar";
 import { Overview } from "./sections/Overview";
-import  {Banner } from "./sections/Banner";
 import { WhatsApp } from "./components/contact/WhatsApp";
 import Pricing from "./sections/Pricing";
 import { MasterPlan } from "./sections/MasterPlan";
 import { Gallery } from "./sections/Gallery";
-// import { SiteVisitForm } from "./components/contact/SiteVisitForm";
-import  ContactForm  from "./components/contact/ContactForm";
-// import { FloorPlan } from "./sections/FloorPlan";
-// import { Highlights } from "./sections/Highlights";
+import ContactForm from "./components/contact/ContactForm";
+import { useLeadTracking } from "./hooks/useLeadTracking";
+// Add this import if you have the useLeadTracking hook
+// import { useLeadTracking } from "./hooks/useLeadTracking";
 
 const RevealOnScroll = ({ children }) => {
   const ref = useRef(null);
@@ -26,8 +25,8 @@ const RevealOnScroll = ({ children }) => {
 
   const props = useSpring({
     opacity: isIntersecting ? 1 : 0,
-    transform: isIntersecting ? 'translateY(0)' : 'translateY(20px)',
-    config: { mass: 1, tension: 210, friction: 20 }
+    transform: isIntersecting ? "translateY(0)" : "translateY(20px)",
+    config: { mass: 1, tension: 210, friction: 20 },
   });
 
   useEffect(() => {
@@ -57,11 +56,42 @@ const RevealOnScroll = ({ children }) => {
 export const PageRoute = () => {
   const [sitevisitmodal, setSiteVisitModal] = useState(false);
   const [contactmodal, setContactModal] = useState(false);
+  const [leadSource, setLeadSource] = useState(null);
+  const pageViewSentRef = useRef(false);
+  
+  // Uncomment this if you have the useLeadTracking hook
+  const { trackFormOpen } = useLeadTracking();
 
+  const openContactModal = (source, propertyType = null) => {
+    setLeadSource({ source, propertyType });
+    setContactModal(true);
+    
+    // Uncomment this if you have the useLeadTracking hook
+    trackFormOpen(source, 'contact_form', propertyType);
+  };
+
+  useEffect(() => {
+    if (pageViewSentRef.current) return;
+    pageViewSentRef.current = true;
+
+    const params = new URLSearchParams(window.location.search);
+    const source = params.get("utmSource");
+    const medium = params.get("utmMedium");
+    const campaign = params.get("utmCampaign");
+    const keyword = params.get("utmKeyword");
+
+    ReactGA.send({
+      hitType: "pageview",
+      utmSource: source,
+      utmMedium: medium,
+      utmCampaign: campaign,
+      utmKeyowrd: keyword,
+    });
+  }, []);
 
   return (
     <BrowserRouter>
-     {/* {sitevisitmodal && (
+      {/* {sitevisitmodal && (
         <SiteVisitForm
           sitevisitmodal={sitevisitmodal}
           setSiteVisitModal={setSiteVisitModal}
@@ -72,25 +102,26 @@ export const PageRoute = () => {
           contactmodal={contactmodal}
           setContactModal={setContactModal}
           setSiteVisitModal={setSiteVisitModal}
+          leadSource={leadSource}
         />
       )}
-     
-      <Navbar 
-       
-      sitevisitmodal={sitevisitmodal}
-      setSiteVisitModal={setSiteVisitModal}
-      setContactModal={setContactModal}
+
+      <Navbar
+        sitevisitmodal={sitevisitmodal}
+        setSiteVisitModal={setSiteVisitModal}
+        openContactModal={openContactModal}
       />
-       
+
       <WhatsApp />
       <Routes>
-        <Route path="/" element={
-          <>
+        <Route
+          path="/"
+          element={
+            <>
               <RevealOnScroll>
-                  <Home 
-                  contactmodal={contactmodal}
-                  setContactModal={setContactModal}
-                  />
+                <Home
+                  openContactModal={openContactModal}
+                />
               </RevealOnScroll>
               <RevealOnScroll>
                 <Features />
@@ -99,32 +130,22 @@ export const PageRoute = () => {
                 { <Highlights /> }
               </RevealOnScroll> */}
               <RevealOnScroll>
-                <Overview 
-                  contactmodal={contactmodal}
-                  setContactModal={setContactModal}
+                <Overview
+                  openContactModal={openContactModal}
                 />
               </RevealOnScroll>
               <RevealOnScroll>
-                <Pricing 
-                  contactmodal={contactmodal}
-                  setContactModal={setContactModal}               
+                <Pricing
+                  openContactModal={openContactModal}
                 />
               </RevealOnScroll>
               <RevealOnScroll>
-                <MasterPlan 
-                  contactmodal={contactmodal}
-                  setContactModal={setContactModal}               
+                <MasterPlan
+                  openContactModal={openContactModal}
                 />
-
-              {/* <RevealOnScroll>
-                <FloorPlan 
-                    contactmodal={contactmodal}
-                    setContactModal={setContactModal}   
-                />
-              </RevealOnScroll> */}
-              <RevealOnScroll>
-                <Location />
-              </RevealOnScroll>
+                <RevealOnScroll>
+                  <Location />
+                </RevealOnScroll>
               </RevealOnScroll>
               <RevealOnScroll>
                 <Amenities />
@@ -132,25 +153,31 @@ export const PageRoute = () => {
               <RevealOnScroll>
                 <Gallery />
               </RevealOnScroll>
-          </>
-        } />
-        <Route path="/Home" element={
-          <>
-            <RevealOnScroll>
-              <Home 
-              contactmodal={contactmodal}
-              setContactModal={setContactModal}
-              />
-            </RevealOnScroll>
-          </>
-        } />
-        <Route path="/Features" element={
-          <>
-            <RevealOnScroll>
-              <Features />
-            </RevealOnScroll>
-          </>
-        } />
+            </>
+          }
+        />
+        <Route
+          path="/Home"
+          element={
+            <>
+              <RevealOnScroll>
+                <Home
+                  openContactModal={openContactModal}
+                />
+              </RevealOnScroll>
+            </>
+          }
+        />
+        <Route
+          path="/Features"
+          element={
+            <>
+              <RevealOnScroll>
+                <Features />
+              </RevealOnScroll>
+            </>
+          }
+        />
         {/* <Route path="/Highlights" element={
           <>
             <RevealOnScroll>
@@ -158,158 +185,75 @@ export const PageRoute = () => {
             </RevealOnScroll>
           </>
         } /> */}
-        <Route path="/Overview" element={
-          <>
-            <RevealOnScroll>
-              <Overview 
-                contactmodal={contactmodal}
-                setContactModal={setContactModal}
-              />
-            </RevealOnScroll>
-          </>
-        } />
-        <Route path="/Pricing" element={
-          <>
-            <RevealOnScroll>
-              <Pricing 
-                contactmodal={contactmodal}
-                setContactModal={setContactModal}
-              />
-            </RevealOnScroll>
-          </>
-        } />
-        <Route path="/MasterPlan" element={
-          <>
-            <RevealOnScroll>
-              <MasterPlan 
-                contactmodal={contactmodal}
-                setContactModal={setContactModal}
-              />
-            </RevealOnScroll>
-          </>
-        } />
-        {/* <Route path="/FloorPlan" element={
-          <>
-            <RevealOnScroll>
-              <FloorPlan 
-                contactmodal={contactmodal}
-                setContactModal={setContactModal}
-              />
-            </RevealOnScroll>
-          </>
-        } /> */}
-        <Route path="/Location" element={
-          <>
-            <RevealOnScroll>
-              <Location />
-            </RevealOnScroll>
-          </>
-        } />
+        <Route
+          path="/Overview"
+          element={
+            <>
+              <RevealOnScroll>
+                <Overview
+                  openContactModal={openContactModal}
+                />
+              </RevealOnScroll>
+            </>
+          }
+        />
+        <Route
+          path="/Pricing"
+          element={
+            <>
+              <RevealOnScroll>
+                <Pricing
+                  openContactModal={openContactModal}
+                />
+              </RevealOnScroll>
+            </>
+          }
+        />
+        <Route
+          path="/MasterPlan"
+          element={
+            <>
+              <RevealOnScroll>
+                <MasterPlan
+                  openContactModal={openContactModal}
+                />
+              </RevealOnScroll>
+            </>
+          }
+        />
+        <Route
+          path="/Location"
+          element={
+            <>
+              <RevealOnScroll>
+                <Location />
+              </RevealOnScroll>
+            </>
+          }
+        />
 
-        <Route path="/Amenities" element={
-          <>
-            <RevealOnScroll>
-              <Amenities />
-            </RevealOnScroll>
-          </>
-        } />
-        <Route path="/Gallery" element={
-          <>
-            <RevealOnScroll>
-              <Gallery />
-            </RevealOnScroll>
-          </>
-        } />
+        <Route
+          path="/Amenities"
+          element={
+            <>
+              <RevealOnScroll>
+                <Amenities />
+              </RevealOnScroll>
+            </>
+          }
+        />
+        <Route
+          path="/Gallery"
+          element={
+            <>
+              <RevealOnScroll>
+                <Gallery />
+              </RevealOnScroll>
+            </>
+          }
+        />
       </Routes>
-      <Footer 
-      contactmodal={contactmodal}
-      setContactModal={setContactModal}
-      />
+      <Footer openContactModal={openContactModal} />
     </BrowserRouter>
-  )
-}
-
-// import React from "react";
-// import { Home } from "./sections/Home";
-// import { Features } from "./sections/Features";
-// import { Location } from "./sections/Location";
-// import { Amenities } from "./sections/Amenities";
-// import { Footer } from "./components/footer/Footer";
-// import { Navbar } from "./components/navbar/Navbar";
-// import { Overview } from "./sections/Overview";
-
-// import { BrowserRouter, Routes, Route } from "react-router-dom";
-// import { WhatsApp } from "./components/contact/WhatsApp";
-// import Pricing from "./sections/Pricing";
-// import { MasterPlan } from "./sections/MasterPlan";
-// import { Gallery } from "./sections/Gallery";
-// import { SiteVisitForm } from "./components/contact/SiteVisitForm";
-// import { useState } from "react";
-// import { ContactForm } from "./components/contact/ContactForm";
-
-// export const PageRoute = () => {
-//   const [sitevisitmodal, setSiteVisitModal] = useState(false);
-//   const [contactmodal, setContactModal] = useState(false);
-
-
-//   const handleBackgroundClick = (event) => {
-//     if (event.target === event.currentTarget) {
-//       setContactModal(false);
-//       setSiteVisitModal(false);
-//     }
-//   };
-
-//   return (
-//     <BrowserRouter>
-//       {sitevisitmodal && (
-//         <SiteVisitForm
-//           sitevisitmodal={sitevisitmodal}
-//           setSiteVisitModal={setSiteVisitModal}
-//         />
-//       )}
-//       {contactmodal && (
-//         <ContactForm
-//           contactmodal={contactmodal}
-//           setContactModal={setContactModal}
-//           setSiteVisitModal={setSiteVisitModal}
-//         />
-//       )}
-//       <Navbar
-//         sitevisitmodal={sitevisitmodal}
-//         setSiteVisitModal={setSiteVisitModal}
-//         contactmodal={contactmodal}
-//         setContactModal={setContactModal}
-//       />
-//       <WhatsApp />
-//       <div onClick={handleBackgroundClick}>
-//       <Routes>
-//         <Route
-//           path="/"
-//           element={
-//             <>
-//               <Home
-//                 contactmodal={contactmodal}
-//                 setContactModal={setContactModal}
-//               />
-//               <Features />
-//               <div className="py-10 px-10 bg-[#fffaee]">
-//                 <Overview />
-//                 <Pricing 
-//                 contactmodal={contactmodal}
-//                 setContactModal={setContactModal}
-//                 />
-
-//                 <Location />
-//                 <Amenities />
-//                 <Gallery />
-//               </div> 
-//             </>
-//           }
-//         />
-//       </Routes>
-//       </div>
-//       <Footer />
-//     </BrowserRouter>
-//   );
-// };
-
+  );
+};

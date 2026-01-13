@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { FormAlert } from "./FormAlert";
 import ReactGA from "react-ga4";
 import { Phone, Xmark } from "iconoir-react";
@@ -6,6 +6,7 @@ import overlaybg from "../../assets/gallery/14.webp";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { isValidPhoneNumber } from "libphonenumber-js";
+import { useLeadTracking, LEAD_SOURCES } from "../../hooks/useLeadTracking";
 
 // GA4 Init
 const trackingId = import.meta.env.VITE_GA_MEASUREMENT_ID;
@@ -14,37 +15,54 @@ if (trackingId) {
 }
 
 // 🔥 GTM EVENT PUSH
-const fireContactFormEvent = () => {
-  if (window.dataLayer) {
-    window.dataLayer.push({
-      event: "Contact_form_submit",
-      form_name: "Contact Form",
-      project_name: "Prestige Marigold",
-      lead_type: "Enquiry",
-    });
-  }
+const fireContactFormSubmitEvent = ({ projectName, leadSource, utmParams }) => {
+  if (!window?.dataLayer) return;
+
+  window.dataLayer.push({
+    event: "Contact_form_submit",
+    form_name: "Contact Form",
+    project_name: projectName,
+    lead_source: leadSource || "unknown",
+    utm_source: utmParams?.utmSource || "",
+    utm_medium: utmParams?.utmMedium || "",
+    utm_campaign: utmParams?.utmCampaign || "",
+    utm_keyword: utmParams?.utmKeyword || "",
+  });
 };
 
-const ContactForm = ({ contactmodal, setContactModal, setSiteVisitModal }) => {
+const ContactForm = ({ contactmodal, setContactModal, leadSource }) => {
+  const { trackFormSubmission } = useLeadTracking();
+
   const [name, setName] = useState("");
   const [number, setNumber] = useState("");
   const [alert, setAlert] = useState(null);
   const [loading, setLoading] = useState(false);
   const [utmParams, setUtmParams] = useState({});
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // ✅ memoized validation
+  const isFormValid = useMemo(() => {
+    if (!name || !number) return false;
+    if (!/^[A-Za-z ]+$/.test(name)) return false;
+    if (!isValidPhoneNumber(number)) return false;
+    return true;
+  }, [name, number]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const getUTMParams = () => {
+    if (typeof window === "undefined") return {};
     const params = new URLSearchParams(window.location.search);
     return {
-      utmSource: params.get("utm_source") || "",
-      utmMedium: params.get("utm_medium") || "",
-      utmCampaign: params.get("utm_campaign") || "",
+      utmSource: params.get("utmSource") || "",
+      utmMedium: params.get("utmMedium") || "",
+      utmCampaign: params.get("utmCampaign") || "",
+      utmKeyword: params.get("utmKeyword") || "",
     };
   };
 
@@ -53,21 +71,15 @@ const ContactForm = ({ contactmodal, setContactModal, setSiteVisitModal }) => {
   }, []);
 
   const validateForm = () => {
-    if (!name || !number) {
-      setAlert(<FormAlert message="Please fill all required fields." onClose={() => setAlert(null)} />);
+    if (!isFormValid) {
+      setAlert(
+        <FormAlert
+          message="Please enter valid name and phone number."
+          onClose={() => setAlert(null)}
+        />
+      );
       return false;
     }
-
-    if (!/^[A-Za-z ]+$/.test(name)) {
-      setAlert(<FormAlert message="Invalid Name." onClose={() => setAlert(null)} />);
-      return false;
-    }
-
-    if (!isValidPhoneNumber(number)) {
-      setAlert(<FormAlert message="Invalid Phone Number." onClose={() => setAlert(null)} />);
-      return false;
-    }
-
     return true;
   };
 
@@ -82,6 +94,13 @@ const ContactForm = ({ contactmodal, setContactModal, setSiteVisitModal }) => {
       return;
     }
 
+    // Internal tracking
+    trackFormSubmission(
+      leadSource?.source || LEAD_SOURCES.UNKNOWN,
+      "contact_form",
+      leadSource?.propertyType
+    );
+
     setAlert(<FormAlert message="Submitting form..." onClose={() => setAlert(null)} />);
 
     const payload = {
@@ -95,12 +114,13 @@ const ContactForm = ({ contactmodal, setContactModal, setSiteVisitModal }) => {
         source: utmParams.utmSource || null,
         medium: utmParams.utmMedium || null,
         campaign: utmParams.utmCampaign || null,
+        keyword: utmParams.utmKeyword || null,
       },
     };
 
     try {
       const response = await fetch(
-        "https://google-campaign-leads-service-dot-iqol-crm.uc.r.appspot.com/handleMultipleCampaignData",
+        "https://google-campaign-leads-service-dot-iqol-crm.appspot.com/handleMultipleCampaignData",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -108,22 +128,38 @@ const ContactForm = ({ contactmodal, setContactModal, setSiteVisitModal }) => {
         }
       );
 
-      if (!response.ok) throw new Error("API Error");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       await response.json();
 
-      // ✅ FIRE GTM EVENT (FOR GOOGLE ADS & GA4)
-      fireContactFormEvent();
+      // 🔥 FIRE GTM EVENT (Google Ads / GA4)
+      fireContactFormSubmitEvent({
+        projectName: payload.projectName,
+        leadSource: leadSource?.source,
+        utmParams,
+      });
 
       setName("");
       setNumber("");
 
-      setAlert(<FormAlert message="We received your info. Expect a response soon!" onClose={() => setAlert(null)} />);
+      setAlert(
+        <FormAlert
+          message="We received your info. Expect a response soon!"
+          onClose={() => setAlert(null)}
+        />
+      );
     } catch (error) {
-      console.error(error);
-      setAlert(<FormAlert message="Something went wrong. Please try again later." onClose={() => setAlert(null)} />);
+      console.error("Error submitting form:", error);
+      setAlert(
+        <FormAlert
+          message="Something went wrong. Please try again later."
+          onClose={() => setAlert(null)}
+        />
+      );
     } finally {
-      setTimeout(() => setLoading(false), 800);
+      setTimeout(() => setLoading(false), 1000);
     }
   };
 
@@ -132,18 +168,23 @@ const ContactForm = ({ contactmodal, setContactModal, setSiteVisitModal }) => {
       <div className="fixed inset-0 bg-black opacity-80 z-30"></div>
 
       <div className={`fixed ${isMobile ? "" : "top-24"} left-0 right-0 bg-white z-40 w-full md:w-fit mx-auto`}>
-        <div className="max-w-7xl mx-auto flex gap-5 items-center justify-between border shadow-xl overflow-hidden" style={{ height: "75vh" }}>
-          
+        <div
+          className="max-w-7xl mx-auto flex gap-5 items-center justify-between border shadow-xl overflow-hidden"
+          style={{ height: "75vh" }}
+        >
           <img src={overlaybg} alt="background" className="hidden md:block w-full h-full" />
 
           <div className="mx-auto w-full px-8 h-full flex flex-col items-center justify-center">
-            <button className="absolute top-2 right-2" onClick={() => setContactModal(!contactmodal)}>
+            <button
+              className="absolute top-2 right-2 bg-white"
+              onClick={() => setContactModal(!contactmodal)}
+            >
               <Xmark />
             </button>
 
-            <h2 className="text-[28px] font-semibold text-center pt-6">
+            <div className={`font-semibold text-[28px] text-center ${isMobile ? "pt-4" : "pt-36"} md:pt-8`}>
               Want to know more? Enquire Now!
-            </h2>
+            </div>
 
             <div className="max-w-sm w-full pt-8">
               <input
@@ -168,16 +209,20 @@ const ContactForm = ({ contactmodal, setContactModal, setSiteVisitModal }) => {
             <div className="max-w-sm w-full">
               <button
                 onClick={handleSubmit}
-                disabled={loading}
-                className={`w-full p-3 text-white ${loading ? "bg-gray-400" : "bg-PrestigeBrown"}`}
+                disabled={loading || !isFormValid}
+                className={`w-full p-3 text-white ${
+                  loading || !isFormValid
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-PrestigeBrown"
+                }`}
               >
                 {loading ? "Submitting..." : "Submit"}
               </button>
             </div>
 
             <div className="max-w-sm w-full mt-4">
-              <a href="tel:+919353329893" className="block bg-PrestigeBrown text-white p-3 text-center">
-                <Phone className="inline mr-2" /> 93533 29893
+              <a href="tel:+918919456501" className="block bg-PrestigeBrown text-white p-3 text-center">
+                <Phone className="inline mr-2" /> 89194 56501
               </a>
             </div>
           </div>
