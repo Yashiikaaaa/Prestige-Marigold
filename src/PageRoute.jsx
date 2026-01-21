@@ -133,16 +133,19 @@ export const PageRoute = () => {
               <RevealOnScroll>
                 <Overview
                   openContactModal={openContactModal}
+                  setContactModal={setContactModal}
                 />
               </RevealOnScroll>
               <RevealOnScroll>
                 <Pricing
                   openContactModal={openContactModal}
+                  setContactModal={setContactModal}
                 />
               </RevealOnScroll>
               <RevealOnScroll>
                 <MasterPlan
                   openContactModal={openContactModal}
+                  setContactModal={setContactModal}
                 />
                 <RevealOnScroll>
                   <Location />
@@ -194,6 +197,7 @@ export const PageRoute = () => {
               <RevealOnScroll>
                 <Overview
                   openContactModal={openContactModal}
+                  setContactModal={setContactModal}
                 />
               </RevealOnScroll>
             </>
@@ -217,7 +221,9 @@ export const PageRoute = () => {
             <>
               <RevealOnScroll>
                 <MasterPlan
-                  openContactModal={openContactModal}
+                  contactmodal={openContactModal}
+                  
+                  setContactModal={setContactModal}
                 />
               </RevealOnScroll>
             </>
@@ -255,7 +261,10 @@ export const PageRoute = () => {
           }
         />
       </Routes>
-      <Footer openContactModal={openContactModal} />
+      <Footer 
+      openContactModal={openContactModal}
+              setContactModal={setContactModal} 
+              />
     </BrowserRouter>
   );
 };
