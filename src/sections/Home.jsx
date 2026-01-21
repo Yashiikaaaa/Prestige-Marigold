@@ -101,7 +101,7 @@ export const Home = ({ contactmodal, setContactModal }) => {
               className="h-3 md:h-6 text-black"
             />
             <p className="max-w-96 font-body text-left text-black md:text-2xl text-xs font-medium leading-[130%]">
-           IVC Road{/* Location name */}
+          Off IVC Road{/* Location name */}
             </p>
           </div>
         </div>
