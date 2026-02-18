@@ -78,7 +78,7 @@ export const Home = ({ contactmodal, setContactModal }) => {
                     />
                   </div>
                   <p className="max-w-96 font-body font-semibold text-left text-white md:text-2xl text-sm">
-                    IVC Road{/* Location name */}
+                    Off IVC Road{/* Location name */}
                   </p>
                 </div>
               </div>
